@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { useState, type PropsWithChildren } from "react";
 import { Header } from "~/components/Header";
+import { NoteEditor } from "~/components/NoteEditor";
 import { api, type RouterOutputs } from "~/utils/api";
 
 const Home: NextPage = () => {
@@ -27,6 +28,7 @@ export default Home;
 
 type Topic = RouterOutputs["topic"]["getAll"][0];
 type User = RouterOutputs["topic"]["getAll"][0]["user"];
+type Note = RouterOutputs["note"]["getAll"][0];
 type Props = {
   user: User;
   className?: string;
@@ -54,6 +56,10 @@ export const Content = () => {
       },
     }
   );
+  const { data: notes, refetch: refetchNotes } = api.note.getAll.useQuery(
+    { topicId: selectedTopic?.id ?? "" },
+    { enabled: sessionData?.user !== undefined && selectedTopic !== null }
+  );
   const createTopic = api.topic.create.useMutation({
     onSuccess: () => {
       void refetchTopics();
@@ -65,6 +71,13 @@ export const Content = () => {
       void refetchTopics();
     },
   });
+
+  const createNote = api.note.create.useMutation({
+    onSuccess: () => {
+      void refetchNotes();
+    },
+  });
+
   return (
     <div className="grid grid-cols-4 gap-2">
       <div className="">
@@ -105,7 +118,20 @@ export const Content = () => {
           }}
         ></input>
       </div>
-      <div className="col-span-3"></div>
+      <div className="col-span-3">
+        {!!selectedTopic && (
+          <NoteEditor
+            onSave={(title, content) => {
+              console.log({ _: "SAVE", title, content, selectedTopic });
+              createNote.mutate({
+                title,
+                content,
+                topicId: selectedTopic.id,
+              });
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };
