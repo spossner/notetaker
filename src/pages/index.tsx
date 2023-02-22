@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { useState, type PropsWithChildren } from "react";
 import { Header } from "~/components/Header";
+import { NoteCard } from "~/components/NoteCard";
 import { NoteEditor } from "~/components/NoteEditor";
 import { api, type RouterOutputs } from "~/utils/api";
 
@@ -78,6 +79,12 @@ export const Content = () => {
     },
   });
 
+  const deleteNote = api.note.delete.useMutation({
+    onSuccess: () => {
+      void refetchNotes();
+    },
+  });
+
   return (
     <div className="grid grid-cols-4 gap-2">
       <div className="">
@@ -119,6 +126,13 @@ export const Content = () => {
         ></input>
       </div>
       <div className="col-span-3">
+        {notes?.map((note) => (
+          <NoteCard
+            key={note.id}
+            note={note}
+            onDelete={() => deleteNote.mutate({ id: note.id })}
+          />
+        ))}
         {!!selectedTopic && (
           <NoteEditor
             onSave={(title, content) => {
